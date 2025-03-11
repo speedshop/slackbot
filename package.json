@@ -1,5 +1,5 @@
 {
-  "name": "github-invite-slackbot",
+  "name": "rpw-slackbot",
   "version": "1.0.0",
   "description": "A Slack bot that sends GitHub organization invites",
   "main": "index.js",
@@ -9,7 +9,6 @@
     "lint": "eslint . --ext .js",
     "lint:fix": "eslint . --ext .js --fix",
     "pretest": "npm run lint",
-    "ci": "npm run lint && npm test"
   },
   "dependencies": {
     "@slack/bolt": "^3.17.0",
