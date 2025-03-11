@@ -89,6 +89,63 @@ LOG_LEVEL=debug npm start
 NODE_ENV=development LOG_LEVEL=debug npm start
 ```
 
+### 5. Running with Docker
+
+This application can also be run using Docker, which simplifies deployment and ensures consistent environments.
+
+#### Using Docker Compose (Recommended)
+
+1. Make sure you have Docker and Docker Compose installed on your system
+2. Configure your `.env` file as described in step 3 above
+3. Build and start the container:
+
+```bash
+docker-compose up -d
+```
+
+4. View logs:
+
+```bash
+docker-compose logs -f
+```
+
+5. Stop the container:
+
+```bash
+docker-compose down
+```
+
+#### Using Docker Directly
+
+1. Build the Docker image:
+
+```bash
+docker build -t rails-performance-slackbot .
+```
+
+2. Run the container:
+
+```bash
+docker run -d \
+  --name slackbot \
+  -v $(pwd)/data:/app/data \
+  --env-file .env \
+  rails-performance-slackbot
+```
+
+3. View logs:
+
+```bash
+docker logs -f slackbot
+```
+
+4. Stop the container:
+
+```bash
+docker stop slackbot
+docker rm slackbot
+```
+
 ## 🚀 Usage
 
 1. Direct message the bot with a GitHub username

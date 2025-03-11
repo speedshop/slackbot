@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  slackbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      # You can override any environment variables here
+      # - SLACK_BOT_TOKEN=
+      # - SLACK_SIGNING_SECRET=
+      # - SLACK_APP_TOKEN=
+      # - SLACK_ADMIN_USER_ID=
+      # - GITHUB_TOKEN=
+      # - GITHUB_ORG=
+      # - GITHUB_TEAM_ID=
