@@ -1,10 +1,14 @@
-// Mock console.error before all tests
-beforeEach(() => {
-  jest.spyOn(console, 'log').mockImplementation(() => {});
-  jest.spyOn(console, 'error').mockImplementation(() => {});
+// Mock Pino logger
+jest.mock('./src/config/logger', () => {
+  return {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  };
 });
 
-// Restore console.error after each test
+// Clear all mocks after each test
 afterEach(() => {
-  console.error.mockRestore();
+  jest.clearAllMocks();
 });

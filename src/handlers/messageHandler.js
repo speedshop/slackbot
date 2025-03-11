@@ -1,21 +1,34 @@
+const logger = require('../config/logger');
+
 class MessageHandler {
   constructor(github, userTracker) {
     this.github = github;
     this.userTracker = userTracker;
+    this.adminUserId = process.env.SLACK_ADMIN_USER_ID || 'U01FGF5C91A'; // Default admin user ID
   }
 
   async handleMessage(message, say) {
-    console.log('Received message:', message);
+    logger.info({ message }, 'Received message');
+
+    // Validate message object and its properties
+    if (!message || !message.text) {
+      logger.warn({ message }, 'Received invalid message');
+      await say({
+        text: "Sorry, I couldn't process that message. Please send me a GitHub username as text.",
+        thread_ts: message?.ts
+      });
+      return;
+    }
 
     // Only respond to direct messages
     if (message.channel_type !== 'im') {
-      console.log('Ignoring message - not a direct message');
+      logger.info('Ignoring message - not a direct message');
       return;
     }
 
     // Check if user has already been processed
     const hasBeenProcessed = await this.userTracker.hasBeenProcessed(message.user);
-    console.log(`User ${message.user} has been processed before: ${hasBeenProcessed}`);
+    logger.info({ userId: message.user, hasBeenProcessed }, 'User processing status check');
 
     if (hasBeenProcessed) {
       await say({
@@ -27,11 +40,21 @@ class MessageHandler {
 
     // Check if the message might be a GitHub username
     const potentialUsername = message.text.trim();
-    console.log(`Checking potential GitHub username: ${potentialUsername}`);
+
+    // Check for empty username after trimming
+    if (!potentialUsername) {
+      await say({
+        text: "Please provide a GitHub username.",
+        thread_ts: message.ts
+      });
+      return;
+    }
+
+    logger.info({ username: potentialUsername }, 'Checking potential GitHub username');
     const githubUser = await this.github.checkUsername(potentialUsername);
 
     if (githubUser) {
-      console.log('Valid GitHub user found:', githubUser.login);
+      logger.info({ githubUser }, 'Valid GitHub user found');
       try {
         await say({
           blocks: [
@@ -70,14 +93,14 @@ class MessageHandler {
           thread_ts: message.ts
         });
       } catch (error) {
-        console.error('Error sending confirmation message:', error);
+        logger.error({ error }, 'Error sending confirmation message');
         await say({
           text: "Sorry, there was an error processing your request.",
           thread_ts: message.ts
         });
       }
     } else {
-      console.log(`Invalid GitHub username: ${potentialUsername}`);
+      logger.info({ username: potentialUsername }, 'Invalid GitHub username');
       await say({
         text: "That doesn't appear to be a valid GitHub username. Please try again with a valid GitHub username.",
         thread_ts: message.ts
@@ -86,7 +109,7 @@ class MessageHandler {
   }
 
   async handleConfirmYes({ body, ack, say }) {
-    console.log('Received confirmation:', body);
+    logger.info({ body }, 'Received confirmation');
     await ack();
     const githubUsername = body.actions[0].value;
     const slackUserId = body.user.id;
@@ -105,15 +128,16 @@ class MessageHandler {
         thread_ts: body.message.thread_ts
       });
     } else {
+      logger.error({ result }, 'Error sending GitHub invitation');
       await say({
-        text: "❌ Sorry, there was an error sending the GitHub invitation. Please contact an administrator.",
+        text: `❌ Sorry, there was an error sending the GitHub invitation. Please contact <@${this.adminUserId}>.`,
         thread_ts: body.message.thread_ts
       });
     }
   }
 
   async handleConfirmNo({ body, ack, say }) {
-    console.log('User declined confirmation:', body);
+    logger.info({ body }, 'User declined confirmation');
     await ack();
     await say({
       text: "Okay, please send me the correct GitHub username.",

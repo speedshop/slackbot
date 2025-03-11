@@ -13,6 +13,42 @@ describe('GitHubService', () => {
     expect(nock.isDone()).toBe(true);
   });
 
+  describe('validateGitHubUsername', () => {
+    test('accepts valid usernames', () => {
+      const validUsernames = [
+        'user123',
+        'user-name',
+        'user',
+        'a'.repeat(39),
+        'User123',
+        '123user',
+        'user-name-123'
+      ];
+
+      validUsernames.forEach(username => {
+        expect(github.validateGitHubUsername(username)).toBe(true);
+      });
+    });
+
+    const invalidUsernames = [
+      ['empty string', ''],
+      ['starts with hyphen', '-username'],
+      ['ends with hyphen', 'username-'],
+      ['consecutive hyphens', 'user--name'],
+      ['underscore not allowed', 'user_name'],
+      ['too long (40 chars)', 'a'.repeat(40)],
+      ['period not allowed', 'user.name'],
+      ['space not allowed', 'user name'],
+      ['special chars not allowed', 'user@name'],
+      ['null value', null],
+      ['undefined value', undefined]
+    ];
+
+    test.each(invalidUsernames)('rejects invalid username: %s', (description, username) => {
+      expect(github.validateGitHubUsername(username)).toBe(false);
+    });
+  });
+
   describe('checkUsername', () => {
     test('validates existing GitHub username', async () => {
       const username = 'testuser';

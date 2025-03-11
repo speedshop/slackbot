@@ -4,20 +4,24 @@
   "description": "A Slack bot that sends GitHub organization invites",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node src/index.js",
     "test": "jest"
   },
   "dependencies": {
     "@slack/bolt": "^3.17.0",
     "dotenv": "^16.4.0",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "pino": "^9.6.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "nock": "^13.5.0"
+    "nock": "^13.5.0",
+    "pino-pretty": "^13.0.0"
   },
   "jest": {
-    "setupFilesAfterEnv": ["./jest.setup.js"],
+    "setupFilesAfterEnv": [
+      "./jest.setup.js"
+    ],
     "testEnvironment": "node",
     "verbose": true
   }

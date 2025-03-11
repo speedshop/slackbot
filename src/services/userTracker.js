@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const logger = require('../config/logger');
 
 class UserTracker {
   constructor(filename) {
@@ -19,7 +20,7 @@ class UserTracker {
       const content = await fs.readFile(this.filename, 'utf8');
       return content.split('\n').includes(userId);
     } catch (error) {
-      console.error('Error checking processed user:', error);
+      logger.error('Error checking processed user:', error);
       return false;
     }
   }
@@ -29,7 +30,7 @@ class UserTracker {
       await fs.appendFile(this.filename, `${userId}\n`);
       return true;
     } catch (error) {
-      console.error('Error marking user as processed:', error);
+      logger.error('Error marking user as processed:', error);
       return false;
     }
   }
