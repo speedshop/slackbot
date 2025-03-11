@@ -10,7 +10,7 @@
 A Slack bot that validates GitHub usernames and automates organization invites for the Rails Performance Slack, built with the Slack Bolt framework.
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/845662/114326758-64d1c580-9b73-11eb-95a1-e767558e1e78.png" alt="Bot Preview" width="600">
+  <img width="560" alt="Bot preview in Slack showing how it prompts the user" src="https://github.com/user-attachments/assets/70f48015-df97-4935-8d32-4764a2e1c53a" />
 </p>
 
 Vibe coded in a few hours with Cursor.
