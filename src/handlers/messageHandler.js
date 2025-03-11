@@ -14,7 +14,7 @@ class MessageHandler {
     if (!message || !message.text) {
       logger.warn({ message }, 'Received invalid message');
       await say({
-        text: "Sorry, I couldn't process that message. Please send me a GitHub username as text.",
+        text: 'Sorry, I couldn\'t process that message. Please send me a GitHub username as text.',
         thread_ts: message?.ts
       });
       return;
@@ -32,7 +32,7 @@ class MessageHandler {
 
     if (hasBeenProcessed) {
       await say({
-        text: "You've already used this service to join the GitHub organization.",
+        text: 'You\'ve already used this service to join the GitHub organization.',
         thread_ts: message.ts
       });
       return;
@@ -44,7 +44,7 @@ class MessageHandler {
     // Check for empty username after trimming
     if (!potentialUsername) {
       await say({
-        text: "Please provide a GitHub username.",
+        text: 'Please provide a GitHub username.',
         thread_ts: message.ts
       });
       return;
@@ -59,33 +59,33 @@ class MessageHandler {
         await say({
           blocks: [
             {
-              type: "section",
+              type: 'section',
               text: {
-                type: "mrkdwn",
+                type: 'mrkdwn',
                 text: `Did you mean this GitHub profile: <${githubUser.html_url}|${githubUser.login}>?`
               }
             },
             {
-              type: "actions",
+              type: 'actions',
               elements: [
                 {
-                  type: "button",
+                  type: 'button',
                   text: {
-                    type: "plain_text",
-                    text: "Yes"
+                    type: 'plain_text',
+                    text: 'Yes'
                   },
-                  style: "primary",
-                  action_id: "confirm_github_yes",
+                  style: 'primary',
+                  action_id: 'confirm_github_yes',
                   value: githubUser.login
                 },
                 {
-                  type: "button",
+                  type: 'button',
                   text: {
-                    type: "plain_text",
-                    text: "No"
+                    type: 'plain_text',
+                    text: 'No'
                   },
-                  style: "danger",
-                  action_id: "confirm_github_no"
+                  style: 'danger',
+                  action_id: 'confirm_github_no'
                 }
               ]
             }
@@ -95,14 +95,14 @@ class MessageHandler {
       } catch (error) {
         logger.error({ error }, 'Error sending confirmation message');
         await say({
-          text: "Sorry, there was an error processing your request.",
+          text: 'Sorry, there was an error processing your request.',
           thread_ts: message.ts
         });
       }
     } else {
       logger.info({ username: potentialUsername }, 'Invalid GitHub username');
       await say({
-        text: "That doesn't appear to be a valid GitHub username. Please try again with a valid GitHub username.",
+        text: 'That doesn\'t appear to be a valid GitHub username. Please try again with a valid GitHub username.',
         thread_ts: message.ts
       });
     }
@@ -124,7 +124,7 @@ class MessageHandler {
       });
     } else if (result.error === 'ALREADY_IN_ORG') {
       await say({
-        text: "Sorry - this user has already been added to the Github organization.",
+        text: 'Sorry - this user has already been added to the Github organization.',
         thread_ts: body.message.thread_ts
       });
     } else {
@@ -140,7 +140,7 @@ class MessageHandler {
     logger.info({ body }, 'User declined confirmation');
     await ack();
     await say({
-      text: "Okay, please send me the correct GitHub username.",
+      text: 'Okay, please send me the correct GitHub username.',
       thread_ts: body.message.thread_ts
     });
   }

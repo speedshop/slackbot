@@ -1,5 +1,4 @@
 const fs = require('fs').promises;
-const path = require('path');
 const UserTracker = require('../../src/services/userTracker');
 
 jest.mock('fs', () => ({

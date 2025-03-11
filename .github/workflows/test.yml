@@ -1,0 +1,57 @@
+name: Node.js Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Create .env file
+      run: |
+        touch .env
+        echo "SLACK_BOT_TOKEN=xoxb-mock-token" >> .env
+        echo "SLACK_SIGNING_SECRET=mock-signing-secret" >> .env
+        echo "SLACK_APP_TOKEN=xapp-mock-token" >> .env
+        echo "SLACK_ADMIN_USER_ID=U01FGF5C91A" >> .env
+        echo "GITHUB_TOKEN=mock-github-token" >> .env
+        echo "GITHUB_ORG=mock-org" >> .env
+        echo "GITHUB_TEAM_ID=12345" >> .env
+        echo "NODE_ENV=test" >> .env
+
+    - name: Create data directory
+      run: |
+        mkdir -p data
+        touch data/processed_users.txt
+
+    - name: Run CI
+      run: npm run ci
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
+          coverage/
+          test-results/
+        retention-days: 7

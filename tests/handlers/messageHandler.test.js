@@ -49,7 +49,7 @@ describe('MessageHandler', () => {
 
       expect(mockUserTracker.hasBeenProcessed).toHaveBeenCalledWith('U123');
       expect(mockSay).toHaveBeenCalledWith({
-        text: "You've already used this service to join the GitHub organization.",
+        text: 'You\'ve already used this service to join the GitHub organization.',
         thread_ts: '123.456'
       });
       expect(mockGithub.checkUsername).not.toHaveBeenCalled();
@@ -70,7 +70,7 @@ describe('MessageHandler', () => {
 
       expect(mockGithub.checkUsername).toHaveBeenCalledWith('testuser');
       expect(mockSay).toHaveBeenCalledWith({
-        text: "That doesn't appear to be a valid GitHub username. Please try again with a valid GitHub username.",
+        text: 'That doesn\'t appear to be a valid GitHub username. Please try again with a valid GitHub username.',
         thread_ts: '123.456'
       });
     });

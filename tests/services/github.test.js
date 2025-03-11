@@ -102,7 +102,7 @@ describe('GitHubService', () => {
 
       // Mock the invitation request
       nock('https://api.github.com')
-        .post(`/orgs/test-org/invitations`, {
+        .post('/orgs/test-org/invitations', {
           invitee_id: userId,
           team_ids: [12345]
         })
@@ -121,7 +121,7 @@ describe('GitHubService', () => {
         .reply(200, { id: userId });
 
       nock('https://api.github.com')
-        .post(`/orgs/test-org/invitations`)
+        .post('/orgs/test-org/invitations')
         .reply(422, {
           message: 'Validation Failed',
           errors: [{
@@ -156,7 +156,7 @@ describe('GitHubService', () => {
         .reply(200, { id: userId });
 
       nock('https://api.github.com')
-        .post(`/orgs/test-org/invitations`)
+        .post('/orgs/test-org/invitations')
         .reply(500);
 
       const result = await github.sendInvite(username);

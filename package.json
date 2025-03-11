@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix",
+    "pretest": "npm run lint",
+    "ci": "npm run lint && npm test"
   },
   "dependencies": {
     "@slack/bolt": "^3.17.0",
@@ -14,6 +18,9 @@
     "pino": "^9.6.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.22.0",
+    "eslint": "^9.22.0",
+    "globals": "^16.0.0",
     "jest": "^29.7.0",
     "nock": "^13.5.0",
     "pino-pretty": "^13.0.0"
@@ -24,5 +31,6 @@
     ],
     "testEnvironment": "node",
     "verbose": true
-  }
+  },
+  "type": "module"
 }
