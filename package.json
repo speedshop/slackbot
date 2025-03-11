@@ -8,7 +8,7 @@
     "test": "jest",
     "lint": "eslint . --ext .js",
     "lint:fix": "eslint . --ext .js --fix",
-    "pretest": "npm run lint",
+    "pretest": "npm run lint"
   },
   "dependencies": {
     "@slack/bolt": "^3.17.0",
