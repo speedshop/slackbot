@@ -15,5 +15,10 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "nock": "^13.5.0"
+  },
+  "jest": {
+    "setupFilesAfterEnv": ["./jest.setup.js"],
+    "testEnvironment": "node",
+    "verbose": true
   }
 }
