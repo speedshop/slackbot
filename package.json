@@ -11,7 +11,7 @@
     "pretest": "npm run lint"
   },
   "dependencies": {
-    "@slack/bolt": "^3.17.0",
+    "@slack/bolt": "^4.2.1",
     "dotenv": "^16.4.0",
     "node-fetch": "^2.7.0",
     "pino": "^9.6.0"
@@ -32,7 +32,6 @@
     "testEnvironment": "node",
     "verbose": true
   },
-  "type": "module",
   "overrides": {
     "glob": "^11.0.1"
   }
