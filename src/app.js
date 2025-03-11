@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { App } = require('@slack/bolt');
+const path = require('path');
 const GitHubService = require('./services/github');
 const UserTracker = require('./services/userTracker');
 const MessageHandler = require('./handlers/messageHandler');
@@ -28,7 +29,7 @@ async function initializeApp() {
     });
 
     // Initialize services
-    const userTracker = new UserTracker('./data/processed_users.txt');
+    const userTracker = new UserTracker(path.join(__dirname, '../data/processed_users.txt'));
     await userTracker.initialize();
 
     const githubService = new GitHubService(
