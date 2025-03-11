@@ -1,0 +1,14 @@
+{
+  "name": "github-invite-slackbot",
+  "version": "1.0.0",
+  "description": "A Slack bot that sends GitHub organization invites",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.17.0",
+    "dotenv": "^16.4.0",
+    "node-fetch": "^2.7.0"
+  }
+}
