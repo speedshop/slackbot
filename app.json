@@ -12,7 +12,7 @@
     "dockerfile": "../Dockerfile"
   },
   "healthchecks": {
-    "web": [
+    "bot": [
         {
             "type":        "uptime",
             "name":        "is it running",
