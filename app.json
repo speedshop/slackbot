@@ -1,0 +1,14 @@
+{
+  "name": "slackbot",
+  "description": "A Slack bot application",
+  "repository": "https://github.com/speedshop/slackbot",
+  "env": {
+    "NODE_ENV": {
+      "description": "The environment to run the application in",
+      "value": "production"
+    }
+  },
+  "docker": {
+    "dockerfile": "../Dockerfile"
+  }
+}
