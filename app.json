@@ -10,5 +10,15 @@
   },
   "docker": {
     "dockerfile": "../Dockerfile"
+  },
+  "healthchecks": {
+    "web": [
+        {
+            "type":        "uptime",
+            "name":        "is it running",
+            "description": "up for 10 seconds or no",
+            "uptime":      10
+        }
+    ]
   }
 }
