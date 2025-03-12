@@ -142,12 +142,13 @@ describe('MessageHandler', () => {
         success: false,
         error: 'ALREADY_IN_ORG'
       });
+      mockUserTracker.markAsProcessed.mockResolvedValueOnce(true);
 
       await messageHandler.handleConfirmYes({ body, ack: mockAck, say: mockSay });
 
       expect(mockAck).toHaveBeenCalled();
       expect(mockGithub.sendInvite).toHaveBeenCalledWith('testuser');
-      expect(mockUserTracker.markAsProcessed).not.toHaveBeenCalled();
+      expect(mockUserTracker.markAsProcessed).toHaveBeenCalledWith('U123');
       expect(mockSay).toHaveBeenCalledWith({
         text: expect.stringContaining('already been added'),
         thread_ts: '123.456'

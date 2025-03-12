@@ -123,6 +123,7 @@ class MessageHandler {
         thread_ts: body.message.thread_ts
       });
     } else if (result.error === 'ALREADY_IN_ORG') {
+      await this.userTracker.markAsProcessed(slackUserId);
       await say({
         text: 'Sorry - this user has already been added to the Github organization.',
         thread_ts: body.message.thread_ts
