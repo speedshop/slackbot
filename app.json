@@ -1,6 +1,6 @@
 {
   "name": "slackbot",
-  "description": "A Slack bot application",
+  "description": "A Slack bot application, yo",
   "repository": "https://github.com/speedshop/slackbot",
   "env": {
     "NODE_ENV": {
