@@ -39,7 +39,12 @@ class MessageHandler {
     }
 
     // Check if the message might be a GitHub username
-    const potentialUsername = message.text.trim();
+    let potentialUsername = message.text.trim();
+
+    // Remove "github join " prefix if present
+    if (potentialUsername.toLowerCase().startsWith('github join ')) {
+      potentialUsername = potentialUsername.substring('github join '.length).trim();
+    }
 
     // Check for empty username after trimming
     if (!potentialUsername) {

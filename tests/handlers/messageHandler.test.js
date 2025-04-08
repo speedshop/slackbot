@@ -105,6 +105,38 @@ describe('MessageHandler', () => {
         thread_ts: '123.456'
       });
     });
+
+    test('extracts username correctly from github join command', async () => {
+      const message = {
+        channel_type: 'im',
+        user: 'U123',
+        ts: '123.456',
+        text: 'github join myusername'
+      };
+
+      const githubUser = {
+        login: 'myusername',
+        html_url: 'https://github.com/myusername'
+      };
+
+      mockUserTracker.hasBeenProcessed.mockResolvedValueOnce(false);
+      mockGithub.checkUsername.mockResolvedValueOnce(githubUser);
+
+      await messageHandler.handleMessage(message, mockSay);
+
+      // Verify that only the username part was extracted and used
+      expect(mockGithub.checkUsername).toHaveBeenCalledWith('myusername');
+      expect(mockSay).toHaveBeenCalledWith({
+        blocks: expect.arrayContaining([
+          expect.objectContaining({
+            text: expect.objectContaining({
+              text: expect.stringContaining(githubUser.html_url)
+            })
+          })
+        ]),
+        thread_ts: '123.456'
+      });
+    });
   });
 
   describe('handleConfirmYes', () => {
