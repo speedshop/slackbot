@@ -3,6 +3,7 @@ const { App } = require('@slack/bolt');
 const path = require('path');
 const GitHubService = require('./services/github');
 const UserTracker = require('./services/userTracker');
+const ExportUrlService = require('./services/exportUrl');
 const MessageHandler = require('./handlers/messageHandler');
 const EnvValidator = require('./config/envValidator');
 const logger = require('./config/logger');
@@ -38,18 +39,22 @@ async function initializeApp() {
       process.env.GITHUB_TEAM_ID
     );
 
-    const messageHandler = new MessageHandler(githubService, userTracker);
+    const exportUrlService = new ExportUrlService({
+      accountId: process.env.R2_ACCOUNT_ID,
+      accessKeyId: process.env.R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+      bucket: process.env.R2_BUCKET,
+      objectKey: process.env.R2_OBJECT_KEY || 'railsperf-export-latest.zip',
+      region: process.env.R2_REGION || 'auto',
+      expiresInSeconds: 604800
+    });
+
+    const messageHandler = new MessageHandler(githubService, userTracker, exportUrlService);
 
     app.message(async ({ message, say }) => {
       try {
         // Log every incoming message at debug level
         logger.debug({ message }, 'Incoming Slack message received');
-
-        // Check if user has been processed before
-        if (await userTracker.hasBeenProcessed(message.user)) {
-          await say('You have already been processed.');
-          return;
-        }
 
         await messageHandler.handleMessage(message, say);
       } catch (error) {

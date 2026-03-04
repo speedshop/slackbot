@@ -4,6 +4,7 @@ describe('MessageHandler', () => {
   let messageHandler;
   let mockGithub;
   let mockUserTracker;
+  let mockExportUrlService;
   let mockSay;
 
   beforeEach(() => {
@@ -17,9 +18,13 @@ describe('MessageHandler', () => {
       markAsProcessed: jest.fn()
     };
 
+    mockExportUrlService = {
+      generateDownloadUrl: jest.fn()
+    };
+
     mockSay = jest.fn();
 
-    messageHandler = new MessageHandler(mockGithub, mockUserTracker);
+    messageHandler = new MessageHandler(mockGithub, mockUserTracker, mockExportUrlService);
   });
 
   describe('handleMessage', () => {
@@ -33,6 +38,46 @@ describe('MessageHandler', () => {
 
       expect(mockGithub.checkUsername).not.toHaveBeenCalled();
       expect(mockSay).not.toHaveBeenCalled();
+    });
+
+    test('handles archive command and returns presigned URL', async () => {
+      const message = {
+        channel_type: 'im',
+        user: 'U123',
+        ts: '123.456',
+        text: 'export'
+      };
+
+      mockExportUrlService.generateDownloadUrl.mockResolvedValueOnce('https://example.com/presigned');
+
+      await messageHandler.handleMessage(message, mockSay);
+
+      expect(mockExportUrlService.generateDownloadUrl).toHaveBeenCalled();
+      expect(mockUserTracker.hasBeenProcessed).not.toHaveBeenCalled();
+      expect(mockGithub.checkUsername).not.toHaveBeenCalled();
+      expect(mockSay).toHaveBeenCalledWith({
+        text: expect.stringContaining('https://example.com/presigned'),
+        thread_ts: '123.456'
+      });
+    });
+
+    test('handles archive command failure gracefully', async () => {
+      const message = {
+        channel_type: 'im',
+        user: 'U123',
+        ts: '123.456',
+        text: 'archive'
+      };
+
+      mockExportUrlService.generateDownloadUrl.mockRejectedValueOnce(new Error('boom'));
+
+      await messageHandler.handleMessage(message, mockSay);
+
+      expect(mockExportUrlService.generateDownloadUrl).toHaveBeenCalled();
+      expect(mockSay).toHaveBeenCalledWith({
+        text: expect.stringContaining('couldn\'t generate the archive download link'),
+        thread_ts: '123.456'
+      });
     });
 
     test('handles already processed users', async () => {

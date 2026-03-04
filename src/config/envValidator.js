@@ -8,7 +8,11 @@ class EnvValidator {
       'GITHUB_ORG',
       'GITHUB_TEAM_ID',
       'SLACK_ADMIN_USER_ID',
-      'NODE_ENV'
+      'NODE_ENV',
+      'R2_ACCOUNT_ID',
+      'R2_ACCESS_KEY_ID',
+      'R2_SECRET_ACCESS_KEY',
+      'R2_BUCKET'
     ];
 
     const missingVars = requiredVars.filter(varName => !process.env[varName]);
@@ -44,6 +48,11 @@ class EnvValidator {
     const validEnvs = ['development', 'production', 'test'];
     if (!validEnvs.includes(process.env.NODE_ENV)) {
       throw new Error(`Invalid NODE_ENV. Must be one of: ${validEnvs.join(', ')}`);
+    }
+
+    // Validate optional R2 object key
+    if (process.env.R2_OBJECT_KEY !== undefined && process.env.R2_OBJECT_KEY.trim() === '') {
+      throw new Error('R2_OBJECT_KEY cannot be empty when provided');
     }
 
     return true;

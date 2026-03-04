@@ -1,10 +1,49 @@
 const logger = require('../config/logger');
 
 class MessageHandler {
-  constructor(github, userTracker) {
+  constructor(github, userTracker, exportUrlService) {
     this.github = github;
     this.userTracker = userTracker;
+    this.exportUrlService = exportUrlService;
     this.adminUserId = process.env.SLACK_ADMIN_USER_ID || 'U01FGF5C91A'; // Default admin user ID
+  }
+
+  isArchiveRequest(text) {
+    const normalized = text.toLowerCase().trim().replace(/[!?.,]+$/g, '').replace(/\s+/g, ' ');
+    return [
+      'export',
+      'archive',
+      'slack export',
+      'slack archive',
+      'export please',
+      'archive please',
+      'please export',
+      'please archive'
+    ].includes(normalized);
+  }
+
+  async handleArchiveRequest(message, say) {
+    if (!this.exportUrlService) {
+      await say({
+        text: `Archive delivery is not configured yet. Please contact <@${this.adminUserId}>.`,
+        thread_ts: message.ts
+      });
+      return;
+    }
+
+    try {
+      const url = await this.exportUrlService.generateDownloadUrl();
+      await say({
+        text: `Here is the latest Slack archive export (link valid for 7 days): ${url}`,
+        thread_ts: message.ts
+      });
+    } catch (error) {
+      logger.error({ error }, 'Error generating archive download URL');
+      await say({
+        text: `Sorry, I couldn't generate the archive download link. Please contact <@${this.adminUserId}>.`,
+        thread_ts: message.ts
+      });
+    }
   }
 
   async handleMessage(message, say) {
@@ -14,7 +53,7 @@ class MessageHandler {
     if (!message || !message.text) {
       logger.warn({ message }, 'Received invalid message');
       await say({
-        text: 'Sorry, I couldn\'t process that message. Please send me a GitHub username as text.',
+        text: 'Sorry, I couldn\'t process that message. Please send a GitHub username, "export", or "archive".',
         thread_ts: message?.ts
       });
       return;
@@ -26,7 +65,13 @@ class MessageHandler {
       return;
     }
 
-    // Check if user has already been processed
+    if (this.isArchiveRequest(message.text)) {
+      logger.info({ userId: message.user }, 'Handling archive export request');
+      await this.handleArchiveRequest(message, say);
+      return;
+    }
+
+    // Check if user has already been processed for GitHub invite flow
     const hasBeenProcessed = await this.userTracker.hasBeenProcessed(message.user);
     logger.info({ userId: message.user, hasBeenProcessed }, 'User processing status check');
 

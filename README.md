@@ -1,13 +1,11 @@
-# Rails Performance Slack GitHub Invite Bot
+# Rails Performance Slack Bot
 
-A Slack bot that helps community members join your GitHub org from Slack DMs.
+A general-purpose bot for the Rails Performance Slack.
 
-It validates GitHub usernames, asks for confirmation, sends the org invite, and prevents duplicate processing.
+Current capabilities:
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-v20+-green.svg)](https://nodejs.org)
-[![Tests](https://github.com/speedshop/slackbot/actions/workflows/test.yml/badge.svg)](https://github.com/speedshop/slackbot/actions/workflows/test.yml)
-[![Lint](https://github.com/speedshop/slackbot/actions/workflows/lint.yml/badge.svg)](https://github.com/speedshop/slackbot/actions/workflows/lint.yml)
+- GitHub organization invites from Slack DMs
+- Slack archive download links via presigned Cloudflare R2 URLs
 
 ## Features
 
@@ -18,6 +16,8 @@ It validates GitHub usernames, asks for confirmation, sends the org invite, and 
 - Sends GitHub org invites to a configured team
 - Tracks processed Slack users in `data/processed_users.txt`
 - Handles "already in org" responses cleanly
+- Responds to `export` or `archive` in DM with a presigned R2 download URL
+- Presigned archive URLs expire after 7 days
 
 ## Installation
 
@@ -26,6 +26,7 @@ It validates GitHub usernames, asks for confirmation, sends the org invite, and 
 - Node.js 20+
 - A Slack workspace where you can install and configure apps
 - A GitHub token with org invite permissions
+- Cloudflare R2 read-only S3 credentials for presigning
 
 ### 2) Clone and install
 
@@ -41,16 +42,16 @@ npm install
 
 Create a Slack app at <https://api.slack.com/apps> and configure:
 
-1. **Socket Mode**: enabled
-2. **OAuth scopes**:
+1. Socket Mode: enabled
+2. OAuth scopes:
    - `chat:write`
    - `chat:write.public`
    - `im:history`
    - `im:read`
    - `im:write`
-3. **Event Subscriptions**:
+3. Event Subscriptions:
    - `message.im`
-4. **Interactivity**: enabled (required for button actions)
+4. Interactivity: enabled (required for button actions)
 5. Install app to workspace and collect:
    - Bot token (`xoxb-...`)
    - App token (`xapp-...`)
@@ -68,6 +69,16 @@ Also gather:
 
 - GitHub org name
 - Team ID (numeric)
+
+### Cloudflare R2 setup
+
+Create an R2 API token with Object Read permission for the bot. Configure:
+
+- Account ID
+- Access key ID
+- Secret access key
+- Bucket name (example: `railsperf-exports`)
+- Object key (example: `railsperf-export-latest.zip`)
 
 ### Environment variables
 
@@ -87,12 +98,18 @@ SLACK_ADMIN_USER_ID=U0123456789
 GITHUB_TOKEN=your-github-token
 GITHUB_ORG=your-org
 GITHUB_TEAM_ID=123456
+R2_ACCOUNT_ID=your-cloudflare-account-id
+R2_ACCESS_KEY_ID=your-r2-readonly-access-key-id
+R2_SECRET_ACCESS_KEY=your-r2-readonly-secret-access-key
+R2_BUCKET=railsperf-exports
 NODE_ENV=development
 ```
 
 Optional:
 
 ```env
+R2_OBJECT_KEY=railsperf-export-latest.zip
+R2_REGION=auto
 LOG_LEVEL=info
 ```
 
@@ -113,15 +130,23 @@ NODE_ENV=development LOG_LEVEL=debug npm start
 
 ## Usage
 
+### GitHub invite flow
+
 1. DM the bot with a GitHub username (or `github join <username>`)
 2. Bot validates and shows a confirmation prompt
-3. Click **Yes** to send the invite, or **No** to retry
+3. Click Yes to send the invite, or No to retry
 4. User receives the GitHub invite email
+
+### Archive delivery flow
+
+1. DM the bot with `export` or `archive`
+2. Bot returns a presigned URL for the latest ZIP archive in R2
+3. URL expires after 7 days
 
 Notes:
 
 - The bot only responds in DMs.
-- If a Slack user was already processed, the bot will not invite again.
+- GitHub invite deduping applies to invite flow only.
 
 ## Development
 
@@ -162,7 +187,8 @@ docker run -d \
 - `src/config/envValidator.js` - environment validation
 - `src/config/logger.js` - `pino` logger setup
 - `src/handlers/messageHandler.js` - message and action handling
-- `src/services/github.js` - GitHub API lookup + invite
+- `src/services/github.js` - GitHub API lookup and invite
+- `src/services/exportUrl.js` - Cloudflare R2 presigned URL generation
 - `src/services/userTracker.js` - processed user tracking
 
 ## Contributing
