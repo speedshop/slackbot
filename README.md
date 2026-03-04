@@ -1,131 +1,153 @@
 # Rails Performance Slack GitHub Invite Bot
 
+A Slack bot that helps community members join your GitHub org from Slack DMs.
+
+It validates GitHub usernames, asks for confirmation, sends the org invite, and prevents duplicate processing.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-v16+-green.svg)](https://nodejs.org)
-[![Slack](https://img.shields.io/badge/Slack-4A154B?logo=slack&logoColor=white)](https://slack.com)
-[![GitHub](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com)
+[![Node.js](https://img.shields.io/badge/Node.js-v20+-green.svg)](https://nodejs.org)
 [![Tests](https://github.com/speedshop/slackbot/actions/workflows/test.yml/badge.svg)](https://github.com/speedshop/slackbot/actions/workflows/test.yml)
 [![Lint](https://github.com/speedshop/slackbot/actions/workflows/lint.yml/badge.svg)](https://github.com/speedshop/slackbot/actions/workflows/lint.yml)
 
-A Slack bot that validates GitHub usernames and automates organization invites for the Rails Performance Slack, built with the Slack Bolt framework.
+## Features
 
-<p align="center">
-  <img width="560" alt="Bot preview in Slack showing how it prompts the user" src="https://github.com/user-attachments/assets/70f48015-df97-4935-8d32-4764a2e1c53a" />
-</p>
+- Accepts GitHub usernames in Slack DMs
+- Supports `github join <username>` command format
+- Validates username format before API calls
+- Confirms the matched GitHub profile with Yes/No buttons
+- Sends GitHub org invites to a configured team
+- Tracks processed Slack users in `data/processed_users.txt`
+- Handles "already in org" responses cleanly
 
-Vibe coded in a few hours with Cursor.
+## Installation
 
-## ✨ Features
+### 1) Prerequisites
 
-- 🔍 Real-time GitHub username validation
-- 🚀 One-click GitHub organization invites
-- 🔄 Interactive button-based confirmation flow
-- 🛡️ Prevents duplicate invites with user tracking
-- 📝 Comprehensive logging with pino
-- 🔌 Uses Slack's Socket Mode for simplified deployment
+- Node.js 20+
+- A Slack workspace where you can install and configure apps
+- A GitHub token with org invite permissions
 
-## 📋 Prerequisites
+### 2) Clone and install
 
-- Node.js 16+
-- A Slack workspace with admin privileges
-- A GitHub account with organization admin access
+```bash
+git clone https://github.com/speedshop/slackbot.git
+cd slackbot
+npm install
+```
 
-## 🛠️ Installation
+## Configuration
 
-### 1. Create a Slack App
+### Slack app setup
 
-1. Go to [Slack API Apps](https://api.slack.com/apps) and create a new app
-2. Enable Socket Mode under "Socket Mode"
-3. Add the following bot token scopes under "OAuth & Permissions":
+Create a Slack app at <https://api.slack.com/apps> and configure:
+
+1. **Socket Mode**: enabled
+2. **OAuth scopes**:
    - `chat:write`
    - `chat:write.public`
    - `im:history`
    - `im:read`
    - `im:write`
-4. Install the app to your workspace
-5. Note your Bot Token (`xoxb-...`) and App-Level Token (`xapp-...`)
+3. **Event Subscriptions**:
+   - `message.im`
+4. **Interactivity**: enabled (required for button actions)
+5. Install app to workspace and collect:
+   - Bot token (`xoxb-...`)
+   - App token (`xapp-...`)
+   - Signing secret
+   - Slack admin user ID (`U...`)
 
-### 2. Create a GitHub Personal Access Token
+### GitHub setup
 
-1. Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
-2. Generate a new token with the following permissions:
-   - `admin:org`
-   - `read:user`
-3. Copy your token for the next step
+Create a personal access token with:
 
-### 3. Configure Environment Variables
+- `admin:org`
+- `read:user`
 
-1. Clone this repository
-2. Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-3. Fill in the following values in your `.env` file:
-   ```
-   SLACK_BOT_TOKEN=xoxb-your-token
-   SLACK_SIGNING_SECRET=your-signing-secret
-   SLACK_APP_TOKEN=xapp-your-token
-   SLACK_ADMIN_USER_ID=your-slack-user-id
-   GITHUB_TOKEN=your-github-personal-access-token
-   GITHUB_ORG=your-organization-name
-   GITHUB_TEAM_ID=your-team-id
-   NODE_ENV=development
-   LOG_LEVEL=info
-   ```
+Also gather:
 
-### 4. Install Dependencies and Start
+- GitHub org name
+- Team ID (numeric)
+
+### Environment variables
+
+Copy the template:
 
 ```bash
-# Install dependencies
-npm install
+cp .env.example .env
+```
 
-# Start the bot
+Set required values:
+
+```env
+SLACK_BOT_TOKEN=xoxb-your-token
+SLACK_SIGNING_SECRET=your-signing-secret
+SLACK_APP_TOKEN=xapp-your-token
+SLACK_ADMIN_USER_ID=U0123456789
+GITHUB_TOKEN=your-github-token
+GITHUB_ORG=your-org
+GITHUB_TEAM_ID=123456
+NODE_ENV=development
+```
+
+Optional:
+
+```env
+LOG_LEVEL=info
+```
+
+## Quickstart
+
+Run the bot:
+
+```bash
 npm start
+```
 
-# Start with debug logging
+Useful local variants:
+
+```bash
 LOG_LEVEL=debug npm start
-
-# Start in development mode with pretty logging
 NODE_ENV=development LOG_LEVEL=debug npm start
 ```
 
-### 5. Running with Docker
+## Usage
 
-This application can also be run using Docker, which simplifies deployment and ensures consistent environments.
+1. DM the bot with a GitHub username (or `github join <username>`)
+2. Bot validates and shows a confirmation prompt
+3. Click **Yes** to send the invite, or **No** to retry
+4. User receives the GitHub invite email
 
-#### Using Docker Compose (Recommended)
+Notes:
 
-1. Make sure you have Docker and Docker Compose installed on your system
-2. Configure your `.env` file as described in step 3 above
-3. Build and start the container:
+- The bot only responds in DMs.
+- If a Slack user was already processed, the bot will not invite again.
 
-```bash
-docker-compose up -d
-```
+## Development
 
-4. View logs:
-
-```bash
-docker-compose logs -f
-```
-
-5. Stop the container:
+### Test and lint
 
 ```bash
-docker-compose down
+npm test        # runs lint first via pretest
+npm run lint
+npm run lint:fix
 ```
 
-#### Using Docker Directly
+### Docker
 
-1. Build the Docker image:
+Use Docker Compose:
+
+```bash
+docker compose up -d
+docker compose logs -f
+docker compose down
+```
+
+Or run directly:
 
 ```bash
 docker build -t rails-performance-slackbot .
-```
 
-2. Run the container:
-
-```bash
 docker run -d \
   --name slackbot \
   -v $(pwd)/data:/app/data \
@@ -133,55 +155,20 @@ docker run -d \
   rails-performance-slackbot
 ```
 
-3. View logs:
+## Project structure
 
-```bash
-docker logs -f slackbot
-```
+- `src/index.js` - startup entrypoint
+- `src/app.js` - Slack app initialization and handlers
+- `src/config/envValidator.js` - environment validation
+- `src/config/logger.js` - `pino` logger setup
+- `src/handlers/messageHandler.js` - message and action handling
+- `src/services/github.js` - GitHub API lookup + invite
+- `src/services/userTracker.js` - processed user tracking
 
-4. Stop the container:
+## Contributing
 
-```bash
-docker stop slackbot
-docker rm slackbot
-```
+Contributions are welcome. Open an issue or pull request.
 
-## 🚀 Usage
+## License
 
-1. Direct message the bot with a GitHub username
-2. The bot will verify if the username exists and ask for confirmation
-3. Click "Yes" to receive an organization invite or "No" to try again
-4. Check your GitHub email for the invite
-
-## 🧩 Architecture
-
-The bot is built with a modular architecture:
-
-- `src/app.js` - Main application setup and Slack event handling
-- `src/handlers/messageHandler.js` - Processes incoming messages and button clicks
-- `src/services/github.js` - Handles GitHub API interactions
-- `src/services/userTracker.js` - Tracks which users have been processed
-- `src/config/logger.js` - Configures pino logging with pretty printing in development
-
-## 📝 Logging
-
-The bot uses pino for structured logging:
-
-- Set `LOG_LEVEL=debug` for detailed logs
-- Set `NODE_ENV=development` to enable pretty-printed logs
-- All Slack framework logs are integrated with the application logger
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- [Slack Bolt Framework](https://slack.dev/bolt-js/concepts)
-- [GitHub API](https://docs.github.com/en/rest)
-- [Pino Logger](https://getpino.io/)
-- [Cursor](https://cursor.sh/) - Used for AI-assisted development
+MIT (see `LICENSE`).
