@@ -34,6 +34,15 @@ class MessageHandler {
     try {
       const url = await this.exportUrlService.generateDownloadUrl();
       await say({
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `:package: <${url}|Download the latest Slack archive export>\n_This link is valid for 7 days._`
+            }
+          }
+        ],
         text: `Here is the latest Slack archive export (link valid for 7 days): ${url}`,
         thread_ts: message.ts
       });
