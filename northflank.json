@@ -4,6 +4,7 @@
     "kind": "Workflow",
     "spec": {
       "type": "sequential",
+      "projectId": "cgrp-slackbot",
       "steps": [
         {
           "kind": "SecretGroup",
