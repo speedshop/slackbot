@@ -9,18 +9,79 @@
           "kind": "Project",
           "ref": "project",
           "spec": {
-            "name": "CGRP Slackbot",
-            "region": "us-east1"
+            "name": "rpw-slackbot",
+            "region": "us-east-1"
           }
         },
         {
-          "kind": "Workflow",
+          "kind": "SecretGroup",
+          "ref": "secrets",
           "spec": {
-            "type": "sequential",
-            "context": {
-              "projectId": "${refs.project.id}"
+            "name": "slackbot-secrets",
+            "secretType": "environment-arguments",
+            "priority": 10,
+            "secrets": {
+              "variables": {
+                "SLACK_BOT_TOKEN": "${args.SLACK_BOT_TOKEN}",
+                "SLACK_SIGNING_SECRET": "${args.SLACK_SIGNING_SECRET}",
+                "SLACK_APP_TOKEN": "${args.SLACK_APP_TOKEN}",
+                "SLACK_ADMIN_USER_ID": "${args.SLACK_ADMIN_USER_ID}",
+                "GITHUB_TOKEN": "${args.GITHUB_TOKEN}",
+                "GITHUB_ORG": "${args.GITHUB_ORG}",
+                "GITHUB_TEAM_ID": "${args.GITHUB_TEAM_ID}",
+                "R2_ACCOUNT_ID": "${args.R2_ACCOUNT_ID}",
+                "R2_ACCESS_KEY_ID": "${args.R2_ACCESS_KEY_ID}",
+                "R2_SECRET_ACCESS_KEY": "${args.R2_SECRET_ACCESS_KEY}",
+                "R2_BUCKET": "${args.R2_BUCKET}",
+                "R2_OBJECT_KEY": "${args.R2_OBJECT_KEY}",
+                "R2_MARKERS_BUCKET": "${args.R2_MARKERS_BUCKET}",
+                "R2_REGION": "${args.R2_REGION}",
+                "NODE_ENV": "production",
+                "LOG_LEVEL": "info"
+              }
             },
-            "steps": []
+            "restrictions": {
+              "restricted": false,
+              "nfObjects": [],
+              "tags": []
+            }
+          }
+        },
+        {
+          "kind": "CombinedService",
+          "ref": "slackbot",
+          "spec": {
+            "name": "slackbot",
+            "deployment": {
+              "instances": 1,
+              "docker": {
+                "configType": "default"
+              }
+            },
+            "billing": {
+              "deploymentPlan": "nf-compute-20"
+            },
+            "vcsData": {
+              "projectType": "github",
+              "projectUrl": "${args.REPO_URL}",
+              "projectBranch": "main"
+            },
+            "buildSettings": {
+              "dockerfile": {
+                "buildEngine": "kaniko",
+                "dockerFilePath": "/Dockerfile",
+                "dockerWorkDir": "/"
+              }
+            },
+            "ports": [],
+            "disabledCI": false,
+            "buildConfiguration": {
+              "pathIgnoreRules": [],
+              "isAllowList": false,
+              "ciIgnoreFlagsEnabled": false
+            },
+            "runtimeEnvironment": {},
+            "buildArguments": {}
           }
         }
       ]
