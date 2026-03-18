@@ -72,15 +72,11 @@
           }
         },
         {
-          "kind": "SecretLink",
+          "kind": "SecretInheritance",
           "ref": "link-secrets",
           "spec": {
-            "linkTarget": {
-              "projectId": "${refs.project.id}",
-              "resourceId": "${refs.slackbot.id}",
-              "resourceType": "service"
-            },
-            "secretGroupId": "${refs.secrets.id}"
+            "secretGroupId": "${refs.secrets.id}",
+            "serviceId": "${refs.slackbot.id}"
           }
         }
       ]
