@@ -46,27 +46,42 @@
           "kind": "CombinedService",
           "ref": "slackbot",
           "spec": {
-            "name": "slackbot",
             "deployment": {
               "instances": 1,
+              "storage": {
+                "ephemeralStorage": {
+                  "storageSize": 1024
+                },
+                "shmSize": 64
+              },
               "docker": {
                 "configType": "default"
               }
             },
-            "billing": {
-              "deploymentPlan": "nf-compute-20"
-            },
-            "vcsData": {
-              "projectType": "github",
-              "projectUrl": "${args.REPO_URL}",
-              "projectBranch": "main"
+            "loadBalancing": {
+              "mode": "leastConnection"
             },
             "buildSettings": {
+              "storage": {
+                "ephemeralStorage": {
+                  "storageSize": 16384
+                }
+              },
               "dockerfile": {
                 "buildEngine": "kaniko",
                 "dockerFilePath": "/Dockerfile",
                 "dockerWorkDir": "/"
               }
+            },
+            "name": "slackbot",
+            "billing": {
+              "deploymentPlan": "nf-compute-10",
+              "buildPlan": "nf-compute-400-16"
+            },
+            "vcsData": {
+              "projectType": "github",
+              "projectUrl": "${args.REPO_URL}",
+              "projectBranch": "main"
             },
             "ports": [],
             "disabledCI": false,
@@ -76,7 +91,13 @@
               "ciIgnoreFlagsEnabled": false
             },
             "runtimeEnvironment": {},
-            "buildArguments": {}
+            "buildArguments": {},
+            "runtimeFiles": {},
+            "buildFiles": {},
+            "dockerSecretMounts": {},
+            "infrastructure": {
+              "architecture": "x86"
+            }
           }
         }
       ]
@@ -86,11 +107,11 @@
     "autorun": false,
     "concurrencyPolicy": "allow"
   },
-  "$schema": "https://api.northflank.com/v1/schemas/template",
   "gitops": {
     "repoUrl": "https://github.com/speedshop/slackbot",
     "vcsService": "github",
     "branch": "main",
     "filePath": "/northflank.json"
-  }
+  },
+  "$schema": "https://api.northflank.com/v1/schemas/template"
 }
