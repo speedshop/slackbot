@@ -14,7 +14,7 @@ Current capabilities:
 - Validates username format before API calls
 - Confirms the matched GitHub profile with Yes/No buttons
 - Sends GitHub org invites to a configured team
-- Tracks processed Slack users in `data/processed_users.txt`
+- Tracks processed Slack users in Cloudflare R2 marker objects
 - Handles "already in org" responses cleanly
 - Responds to `export` or `archive` in DM with a presigned R2 download URL
 - Presigned archive URLs expire after 7 days
@@ -26,7 +26,7 @@ Current capabilities:
 - Node.js 20+
 - A Slack workspace where you can install and configure apps
 - A GitHub token with org invite permissions
-- Cloudflare R2 read-only S3 credentials for presigning
+- Cloudflare R2 S3 credentials (used for archive URL signing and processed-user markers)
 
 ### 2) Clone and install
 
@@ -72,13 +72,21 @@ Also gather:
 
 ### Cloudflare R2 setup
 
-Create an R2 API token with Object Read permission for the bot. Configure:
+Use one credential pair for both operations:
+
+- Generate presigned download URLs for archive ZIPs
+- Read/write processed-user markers
+
+Configure:
 
 - Account ID
-- Access key ID
-- Secret access key
-- Bucket name (example: `railsperf-exports`)
-- Object key (example: `railsperf-export-latest.zip`)
+- Access key ID + secret access key
+- Export bucket name (example: `railsperf-exports`) and object key
+- Marker bucket name (example: `railsperf-processed-users`)
+
+The marker bucket is managed by Terraform in `terraform/`.
+
+For backup safety, enable versioning on the marker bucket.
 
 ### Environment variables
 
@@ -99,9 +107,10 @@ GITHUB_TOKEN=your-github-token
 GITHUB_ORG=your-org
 GITHUB_TEAM_ID=123456
 R2_ACCOUNT_ID=your-cloudflare-account-id
-R2_ACCESS_KEY_ID=your-r2-readonly-access-key-id
-R2_SECRET_ACCESS_KEY=your-r2-readonly-secret-access-key
+R2_ACCESS_KEY_ID=your-r2-access-key-id
+R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
 R2_BUCKET=railsperf-exports
+R2_MARKERS_BUCKET=railsperf-processed-users
 NODE_ENV=development
 ```
 
@@ -112,6 +121,19 @@ R2_OBJECT_KEY=railsperf-export-latest.zip
 R2_REGION=auto
 LOG_LEVEL=info
 ```
+
+## Terraform (markers bucket)
+
+This repo manages the processed-user markers bucket in `terraform/`.
+
+```bash
+cd terraform
+export CLOUDFLARE_API_TOKEN=...
+terraform init
+terraform apply -var="cloudflare_account_id=<ACCOUNT_ID>"
+```
+
+The monthly export bucket (`railsperf-exports`) is intentionally not managed by this repo.
 
 ## Quickstart
 
@@ -130,23 +152,62 @@ NODE_ENV=development LOG_LEVEL=debug npm start
 
 ## Usage
 
-### GitHub invite flow
+The bot only responds to Slack direct messages. All commands are case-insensitive.
 
-1. DM the bot with a GitHub username (or `github join <username>`)
-2. Bot validates and shows a confirmation prompt
-3. Click Yes to send the invite, or No to retry
-4. User receives the GitHub invite email
+### Commands
 
-### Archive delivery flow
+#### GitHub invite
 
-1. DM the bot with `export` or `archive`
-2. Bot returns a presigned URL for the latest ZIP archive in R2
-3. URL expires after 7 days
+Send a GitHub username to get an invite to the GitHub organization:
 
-Notes:
+```
+<username>
+```
 
-- The bot only responds in DMs.
-- GitHub invite deduping applies to invite flow only.
+or with the explicit prefix:
+
+```
+github join <username>
+```
+
+The bot looks up the username on GitHub and shows a confirmation prompt with Yes/No buttons. Clicking Yes sends the org invite. Each Slack user can only use this once.
+
+#### Slack archive download
+
+Any of the following messages will return a presigned R2 download URL (valid for 7 days) for the latest Slack archive ZIP:
+
+```
+export
+archive
+slack export
+slack archive
+export please
+archive please
+please export
+please archive
+```
+
+Trailing punctuation (`!`, `?`, `.`, `,`) is stripped before matching, so `export!` and `archive?` also work.
+
+## Migration and backfill
+
+If you have historical IDs in `data/processed_users.txt`, backfill them to R2 markers before deploying this version:
+
+```bash
+npm run backfill:processed-users
+```
+
+Useful options:
+
+```bash
+# Preview without writing markers
+npm run backfill:processed-users -- --dry-run
+
+# Use a custom source file
+npm run backfill:processed-users -- --file /path/to/processed_users.txt
+```
+
+The script is idempotent and skips users that already have markers.
 
 ## Development
 
@@ -189,7 +250,9 @@ docker run -d \
 - `src/handlers/messageHandler.js` - message and action handling
 - `src/services/github.js` - GitHub API lookup and invite
 - `src/services/exportUrl.js` - Cloudflare R2 presigned URL generation
-- `src/services/userTracker.js` - processed user tracking
+- `src/services/userTracker.js` - processed user tracking via R2 marker objects
+- `bin/backfill-processed-users-to-r2.js` - migration script from legacy file storage to R2 markers
+- `terraform/` - Terraform config for managed Cloudflare resources (markers bucket)
 
 ## Contributing
 
