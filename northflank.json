@@ -84,12 +84,11 @@
     "autorun": false,
     "concurrencyPolicy": "allow"
   },
+  "$schema": "https://api.northflank.com/v1/schemas/template",
   "gitops": {
     "repoUrl": "https://github.com/speedshop/slackbot",
     "vcsService": "github",
-    "accountLogin": "speedshop",
     "branch": "main",
     "filePath": "/northflank.json"
-  },
-  "$schema": "https://api.northflank.com/v1/schemas/template"
+  }
 }
