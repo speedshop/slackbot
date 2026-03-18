@@ -6,14 +6,6 @@
       "type": "sequential",
       "steps": [
         {
-          "kind": "Project",
-          "ref": "project",
-          "spec": {
-            "name": "rpw-slackbot",
-            "region": "us-east-1"
-          }
-        },
-        {
           "kind": "SecretGroup",
           "ref": "secrets",
           "spec": {
