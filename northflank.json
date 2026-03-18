@@ -1,0 +1,157 @@
+{
+  "apiVersion": "v1.2",
+  "name": "rpw-slackbot",
+  "spec": {
+    "kind": "Workflow",
+    "spec": {
+      "type": "sequential",
+      "steps": [
+        {
+          "kind": "Project",
+          "ref": "project",
+          "spec": {
+            "name": "rpw-slackbot",
+            "region": "us-east-1"
+          }
+        },
+        {
+          "kind": "SecretGroup",
+          "ref": "secrets",
+          "spec": {
+            "name": "slackbot-secrets",
+            "secretType": "environment-arguments",
+            "priority": 10,
+            "secrets": {
+              "variables": {
+                "SLACK_BOT_TOKEN": "${args.SLACK_BOT_TOKEN}",
+                "SLACK_SIGNING_SECRET": "${args.SLACK_SIGNING_SECRET}",
+                "SLACK_APP_TOKEN": "${args.SLACK_APP_TOKEN}",
+                "SLACK_ADMIN_USER_ID": "${args.SLACK_ADMIN_USER_ID}",
+                "GITHUB_TOKEN": "${args.GITHUB_TOKEN}",
+                "GITHUB_ORG": "${args.GITHUB_ORG}",
+                "GITHUB_TEAM_ID": "${args.GITHUB_TEAM_ID}",
+                "R2_ACCOUNT_ID": "${args.R2_ACCOUNT_ID}",
+                "R2_ACCESS_KEY_ID": "${args.R2_ACCESS_KEY_ID}",
+                "R2_SECRET_ACCESS_KEY": "${args.R2_SECRET_ACCESS_KEY}",
+                "R2_BUCKET": "${args.R2_BUCKET}",
+                "R2_OBJECT_KEY": "${args.R2_OBJECT_KEY}",
+                "R2_MARKERS_BUCKET": "${args.R2_MARKERS_BUCKET}",
+                "R2_REGION": "${args.R2_REGION}",
+                "NODE_ENV": "production",
+                "LOG_LEVEL": "info"
+              }
+            }
+          }
+        },
+        {
+          "kind": "CombinedService",
+          "ref": "slackbot",
+          "spec": {
+            "name": "slackbot",
+            "deployment": {
+              "instances": 1,
+              "docker": {
+                "configType": "default"
+              }
+            },
+            "billing": {
+              "deploymentPlan": "nf-compute-20"
+            },
+            "vcsData": {
+              "projectType": "github",
+              "projectUrl": "${args.REPO_URL}",
+              "projectBranch": "main"
+            },
+            "buildSettings": {
+              "dockerfile": {
+                "buildEngine": "kaniko",
+                "dockerFilePath": "/Dockerfile",
+                "dockerWorkDir": "/"
+              }
+            }
+          }
+        },
+        {
+          "kind": "SecretLink",
+          "ref": "link-secrets",
+          "spec": {
+            "linkTarget": {
+              "projectId": "${refs.project.id}",
+              "resourceId": "${refs.slackbot.id}",
+              "resourceType": "service"
+            },
+            "secretGroupId": "${refs.secrets.id}"
+          }
+        }
+      ]
+    }
+  },
+  "args": {
+    "REPO_URL": {
+      "description": "GitHub repository URL (e.g. https://github.com/you/repo)",
+      "required": true
+    },
+    "SLACK_BOT_TOKEN": {
+      "description": "Slack bot token (xoxb-...)",
+      "required": true
+    },
+    "SLACK_SIGNING_SECRET": {
+      "description": "Slack signing secret",
+      "required": true
+    },
+    "SLACK_APP_TOKEN": {
+      "description": "Slack app-level token for Socket Mode (xapp-...)",
+      "required": true
+    },
+    "SLACK_ADMIN_USER_ID": {
+      "description": "Slack user ID for admin notifications (U...)",
+      "required": true
+    },
+    "GITHUB_TOKEN": {
+      "description": "GitHub PAT with org/team invite permissions",
+      "required": true
+    },
+    "GITHUB_ORG": {
+      "description": "GitHub organization name",
+      "default": "The-Complete-Guide-To-Rails-Performance",
+      "required": true
+    },
+    "GITHUB_TEAM_ID": {
+      "description": "GitHub team ID (numeric)",
+      "default": "1958350",
+      "required": true
+    },
+    "R2_ACCOUNT_ID": {
+      "description": "Cloudflare account ID for R2",
+      "required": true
+    },
+    "R2_ACCESS_KEY_ID": {
+      "description": "R2 access key ID",
+      "required": true
+    },
+    "R2_SECRET_ACCESS_KEY": {
+      "description": "R2 secret access key",
+      "required": true
+    },
+    "R2_BUCKET": {
+      "description": "R2 bucket for archive exports",
+      "default": "railsperf-exports",
+      "required": true
+    },
+    "R2_OBJECT_KEY": {
+      "description": "R2 object key for latest export ZIP",
+      "default": "railsperf-export-latest.zip",
+      "required": false
+    },
+    "R2_MARKERS_BUCKET": {
+      "description": "R2 bucket for processed-user markers",
+      "default": "railsperf-processed-users",
+      "required": true
+    },
+    "R2_REGION": {
+      "description": "R2 region",
+      "default": "auto",
+      "required": false
+    }
+  }
+}

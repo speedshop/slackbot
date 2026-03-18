@@ -1,90 +1,93 @@
-const fs = require('fs').promises;
 const UserTracker = require('../../src/services/userTracker');
 
-jest.mock('fs', () => ({
-  promises: {
-    access: jest.fn(),
-    writeFile: jest.fn(),
-    readFile: jest.fn(),
-    appendFile: jest.fn()
-  }
+const mockSend = jest.fn();
+
+jest.mock('@aws-sdk/client-s3', () => ({
+  S3Client: jest.fn().mockImplementation(() => ({
+    send: mockSend
+  })),
+  HeadObjectCommand: jest.fn().mockImplementation((input) => ({ input })),
+  PutObjectCommand: jest.fn().mockImplementation((input) => ({ input }))
 }));
 
 describe('UserTracker', () => {
   let userTracker;
-  const testFile = 'test-processed-users.txt';
 
   beforeEach(() => {
     jest.clearAllMocks();
-    userTracker = new UserTracker(testFile);
+    userTracker = new UserTracker({
+      accountId: 'acc123',
+      accessKeyId: 'key123',
+      secretAccessKey: 'secret123',
+      bucket: 'railsperf-processed-users',
+      region: 'auto'
+    });
   });
 
   describe('initialize', () => {
-    test('creates file if it does not exist', async () => {
-      fs.access.mockRejectedValueOnce(new Error('File not found'));
-
-      await userTracker.initialize();
-
-      expect(fs.access).toHaveBeenCalledWith(testFile);
-      expect(fs.writeFile).toHaveBeenCalledWith(testFile, '');
-    });
-
-    test('does nothing if file exists', async () => {
-      fs.access.mockResolvedValueOnce();
-
-      await userTracker.initialize();
-
-      expect(fs.access).toHaveBeenCalledWith(testFile);
-      expect(fs.writeFile).not.toHaveBeenCalled();
+    test('returns true', async () => {
+      const result = await userTracker.initialize();
+      expect(result).toBe(true);
     });
   });
 
   describe('hasBeenProcessed', () => {
-    test('returns true if user ID is in file', async () => {
-      fs.readFile.mockResolvedValueOnce('user1\nuser2\nuser3\n');
+    test('returns true when marker exists', async () => {
+      mockSend.mockResolvedValueOnce({});
 
-      const result = await userTracker.hasBeenProcessed('user2');
+      const result = await userTracker.hasBeenProcessed('U123');
 
       expect(result).toBe(true);
-      expect(fs.readFile).toHaveBeenCalledWith(testFile, 'utf8');
+      expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
+        input: expect.objectContaining({
+          Bucket: 'railsperf-processed-users',
+          Key: 'U123.json'
+        })
+      }));
     });
 
-    test('returns false if user ID is not in file', async () => {
-      fs.readFile.mockResolvedValueOnce('user1\nuser2\nuser3\n');
+    test('returns false when marker does not exist', async () => {
+      mockSend.mockRejectedValueOnce({
+        name: 'NotFound',
+        $metadata: { httpStatusCode: 404 }
+      });
 
-      const result = await userTracker.hasBeenProcessed('user4');
+      const result = await userTracker.hasBeenProcessed('U123');
 
       expect(result).toBe(false);
-      expect(fs.readFile).toHaveBeenCalledWith(testFile, 'utf8');
     });
 
-    test('handles file read errors', async () => {
-      fs.readFile.mockRejectedValueOnce(new Error('Read error'));
+    test('returns false on unexpected errors', async () => {
+      mockSend.mockRejectedValueOnce(new Error('boom'));
 
-      const result = await userTracker.hasBeenProcessed('user1');
+      const result = await userTracker.hasBeenProcessed('U123');
 
       expect(result).toBe(false);
-      expect(fs.readFile).toHaveBeenCalledWith(testFile, 'utf8');
     });
   });
 
   describe('markAsProcessed', () => {
-    test('successfully adds user ID to file', async () => {
-      fs.appendFile.mockResolvedValueOnce();
+    test('writes marker object and returns true', async () => {
+      mockSend.mockResolvedValueOnce({});
 
-      const result = await userTracker.markAsProcessed('user1');
+      const result = await userTracker.markAsProcessed('U123');
 
       expect(result).toBe(true);
-      expect(fs.appendFile).toHaveBeenCalledWith(testFile, 'user1\n');
+      expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
+        input: expect.objectContaining({
+          Bucket: 'railsperf-processed-users',
+          Key: 'U123.json',
+          ContentType: 'application/json'
+        })
+      }));
     });
 
-    test('handles file write errors', async () => {
-      fs.appendFile.mockRejectedValueOnce(new Error('Write error'));
+    test('returns false when marker write fails', async () => {
+      mockSend.mockRejectedValueOnce(new Error('write failed'));
 
-      const result = await userTracker.markAsProcessed('user1');
+      const result = await userTracker.markAsProcessed('U123');
 
       expect(result).toBe(false);
-      expect(fs.appendFile).toHaveBeenCalledWith(testFile, 'user1\n');
     });
   });
 });

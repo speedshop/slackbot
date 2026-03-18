@@ -1,35 +1,70 @@
-const fs = require('fs').promises;
+const { S3Client, HeadObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const logger = require('../config/logger');
 
 class UserTracker {
-  constructor(filename) {
-    this.filename = filename;
+  constructor({
+    accountId,
+    accessKeyId,
+    secretAccessKey,
+    bucket,
+    region = 'auto'
+  }) {
+    this.bucket = bucket;
+
+    this.client = new S3Client({
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      region,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId,
+        secretAccessKey
+      }
+    });
   }
 
   async initialize() {
-    try {
-      await fs.access(this.filename);
-    } catch {
-      await fs.writeFile(this.filename, '');
-    }
+    return true;
+  }
+
+  markerKey(userId) {
+    return `${encodeURIComponent(userId)}.json`;
   }
 
   async hasBeenProcessed(userId) {
     try {
-      const content = await fs.readFile(this.filename, 'utf8');
-      return content.split('\n').includes(userId);
+      await this.client.send(new HeadObjectCommand({
+        Bucket: this.bucket,
+        Key: this.markerKey(userId)
+      }));
+      return true;
     } catch (error) {
-      logger.error('Error checking processed user:', error);
+      const statusCode = error?.$metadata?.httpStatusCode;
+      const errorCode = error?.Code || error?.code || error?.name;
+      if (statusCode === 404 || errorCode === 'NotFound' || errorCode === 'NoSuchKey') {
+        return false;
+      }
+
+      logger.error({ error, userId }, 'Error checking processed user marker in R2');
       return false;
     }
   }
 
   async markAsProcessed(userId) {
+    const body = JSON.stringify({
+      userId,
+      processedAt: new Date().toISOString()
+    });
+
     try {
-      await fs.appendFile(this.filename, `${userId}\n`);
+      await this.client.send(new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: this.markerKey(userId),
+        Body: body,
+        ContentType: 'application/json'
+      }));
       return true;
     } catch (error) {
-      logger.error('Error marking user as processed:', error);
+      logger.error({ error, userId }, 'Error writing processed user marker to R2');
       return false;
     }
   }

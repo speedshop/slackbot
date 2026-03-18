@@ -1,6 +1,5 @@
 require('dotenv').config();
 const { App } = require('@slack/bolt');
-const path = require('path');
 const GitHubService = require('./services/github');
 const UserTracker = require('./services/userTracker');
 const ExportUrlService = require('./services/exportUrl');
@@ -30,7 +29,13 @@ async function initializeApp() {
     });
 
     // Initialize services
-    const userTracker = new UserTracker(path.join(__dirname, '../data/processed_users.txt'));
+    const userTracker = new UserTracker({
+      accountId: process.env.R2_ACCOUNT_ID,
+      accessKeyId: process.env.R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+      bucket: process.env.R2_MARKERS_BUCKET,
+      region: process.env.R2_REGION || 'auto'
+    });
     await userTracker.initialize();
 
     const githubService = new GitHubService(
