@@ -4,12 +4,13 @@
     "kind": "Workflow",
     "spec": {
       "type": "sequential",
-      "projectId": "cgrp-slackbot",
+      "context": {
+        "projectId": "cgrp-slackbot"
+      },
       "steps": [
         {
           "kind": "SecretGroup",
           "ref": "secrets",
-          "projectId": "cgrp-slackbot",
           "spec": {
             "name": "slackbot-secrets",
             "secretType": "environment-arguments",
@@ -44,7 +45,6 @@
         {
           "kind": "CombinedService",
           "ref": "slackbot",
-          "projectId": "cgrp-slackbot",
           "spec": {
             "name": "slackbot",
             "deployment": {
