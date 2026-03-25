@@ -6,10 +6,20 @@ Current capabilities:
 
 - GitHub organization invites from Slack DMs
 - Slack archive download links via presigned Cloudflare R2 URLs
+- A built-in help command that lists every supported command
 
 ## Usage
 
 The bot only responds to Slack direct messages. All commands are case-insensitive.
+
+### Help
+
+Send either of the following messages to get the complete command list:
+
+```
+help
+h
+```
 
 ### GitHub invite
 
@@ -42,7 +52,9 @@ please export
 please archive
 ```
 
-Trailing punctuation (`!`, `?`, `.`, `,`) is stripped before matching, so `export!` and `archive?` also work.
+Trailing punctuation (`!`, `?`, `.`, `,`) is stripped before matching, so `export!`, `archive?`, and `help!` also work.
+
+When the bot returns an error, it also reminds users that they can say `help` for the complete list of commands.
 
 ## Collaborators
 

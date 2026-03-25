@@ -64,7 +64,10 @@ async function initializeApp() {
         await messageHandler.handleMessage(message, say);
       } catch (error) {
         logger.error('Error processing message:', error);
-        await say('An error occurred while processing your request.');
+        await say({
+          text: messageHandler.errorText('An error occurred while processing your request.'),
+          thread_ts: message.ts
+        });
       }
     });
 

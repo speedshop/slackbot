@@ -1,5 +1,7 @@
 const MessageHandler = require('../../src/handlers/messageHandler');
 
+const HELP_HINT = 'Say "help" for a complete list of possible commands.';
+
 describe('MessageHandler', () => {
   let messageHandler;
   let mockGithub;
@@ -40,6 +42,47 @@ describe('MessageHandler', () => {
       expect(mockSay).not.toHaveBeenCalled();
     });
 
+    test('responds to help', async () => {
+      const message = {
+        channel_type: 'im',
+        user: 'U123',
+        ts: '123.456',
+        text: 'help'
+      };
+
+      await messageHandler.handleMessage(message, mockSay);
+
+      expect(mockUserTracker.hasBeenProcessed).not.toHaveBeenCalled();
+      expect(mockGithub.checkUsername).not.toHaveBeenCalled();
+      expect(mockSay).toHaveBeenCalledWith({
+        text: expect.stringContaining('Available commands:'),
+        thread_ts: '123.456'
+      });
+      expect(mockSay.mock.calls[0][0].text).toContain('- help');
+      expect(mockSay.mock.calls[0][0].text).toContain('- h');
+      expect(mockSay.mock.calls[0][0].text).toContain('- <github username>');
+      expect(mockSay.mock.calls[0][0].text).toContain('- github join <username>');
+      expect(mockSay.mock.calls[0][0].text).toContain('- export');
+    });
+
+    test('responds to h alias', async () => {
+      const message = {
+        channel_type: 'im',
+        user: 'U123',
+        ts: '123.456',
+        text: 'h'
+      };
+
+      await messageHandler.handleMessage(message, mockSay);
+
+      expect(mockUserTracker.hasBeenProcessed).not.toHaveBeenCalled();
+      expect(mockGithub.checkUsername).not.toHaveBeenCalled();
+      expect(mockSay).toHaveBeenCalledWith({
+        text: expect.stringContaining('Available commands:'),
+        thread_ts: '123.456'
+      });
+    });
+
     test('handles archive command and returns presigned URL', async () => {
       const message = {
         channel_type: 'im',
@@ -55,10 +98,10 @@ describe('MessageHandler', () => {
       expect(mockExportUrlService.generateDownloadUrl).toHaveBeenCalled();
       expect(mockUserTracker.hasBeenProcessed).not.toHaveBeenCalled();
       expect(mockGithub.checkUsername).not.toHaveBeenCalled();
-      expect(mockSay).toHaveBeenCalledWith({
+      expect(mockSay).toHaveBeenCalledWith(expect.objectContaining({
         text: expect.stringContaining('https://example.com/presigned'),
         thread_ts: '123.456'
-      });
+      }));
     });
 
     test('handles archive command failure gracefully', async () => {
@@ -78,6 +121,7 @@ describe('MessageHandler', () => {
         text: expect.stringContaining('couldn\'t generate the archive download link'),
         thread_ts: '123.456'
       });
+      expect(mockSay.mock.calls[0][0].text).toContain(HELP_HINT);
     });
 
     test('handles already processed users', async () => {
@@ -94,7 +138,7 @@ describe('MessageHandler', () => {
 
       expect(mockUserTracker.hasBeenProcessed).toHaveBeenCalledWith('U123');
       expect(mockSay).toHaveBeenCalledWith({
-        text: 'You\'ve already used this service to join the GitHub organization.',
+        text: `You've already used this service to join the GitHub organization. ${HELP_HINT}`,
         thread_ts: '123.456'
       });
       expect(mockGithub.checkUsername).not.toHaveBeenCalled();
@@ -115,7 +159,7 @@ describe('MessageHandler', () => {
 
       expect(mockGithub.checkUsername).toHaveBeenCalledWith('testuser');
       expect(mockSay).toHaveBeenCalledWith({
-        text: 'That doesn\'t appear to be a valid GitHub username. Please try again with a valid GitHub username.',
+        text: `That doesn't appear to be a valid GitHub username. Please try again with a valid GitHub username. ${HELP_HINT}`,
         thread_ts: '123.456'
       });
     });
@@ -169,7 +213,6 @@ describe('MessageHandler', () => {
 
       await messageHandler.handleMessage(message, mockSay);
 
-      // Verify that only the username part was extracted and used
       expect(mockGithub.checkUsername).toHaveBeenCalledWith('myusername');
       expect(mockSay).toHaveBeenCalledWith({
         blocks: expect.arrayContaining([
@@ -227,7 +270,7 @@ describe('MessageHandler', () => {
       expect(mockGithub.sendInvite).toHaveBeenCalledWith('testuser');
       expect(mockUserTracker.markAsProcessed).toHaveBeenCalledWith('U123');
       expect(mockSay).toHaveBeenCalledWith({
-        text: expect.stringContaining('already been added'),
+        text: `Sorry - this user has already been added to the GitHub organization. ${HELP_HINT}`,
         thread_ts: '123.456'
       });
     });
@@ -247,6 +290,7 @@ describe('MessageHandler', () => {
         text: expect.stringContaining('correct GitHub username'),
         thread_ts: '123.456'
       });
+      expect(mockSay.mock.calls[0][0].text).toContain('help" for a complete list of possible commands');
     });
   });
 });

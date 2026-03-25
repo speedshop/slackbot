@@ -1,5 +1,35 @@
 const logger = require('../config/logger');
 
+const ARCHIVE_COMMANDS = [
+  'export',
+  'archive',
+  'slack export',
+  'slack archive',
+  'export please',
+  'archive please',
+  'please export',
+  'please archive'
+];
+
+const HELP_COMMANDS = ['help', 'h'];
+const HELP_HINT = ' Say "help" for a complete list of possible commands.';
+const HELP_TEXT = [
+  'Available commands:',
+  '- help',
+  '- h',
+  '- <github username>',
+  '- github join <username>',
+  '- export',
+  '- archive',
+  '- slack export',
+  '- slack archive',
+  '- export please',
+  '- archive please',
+  '- please export',
+  '- please archive',
+  'Trailing !, ?, ., and , are ignored for help and archive commands.'
+].join('\n');
+
 class MessageHandler {
   constructor(github, userTracker, exportUrlService) {
     this.github = github;
@@ -8,24 +38,37 @@ class MessageHandler {
     this.adminUserId = process.env.SLACK_ADMIN_USER_ID || 'U01FGF5C91A'; // Default admin user ID
   }
 
+  normalizeCommand(text) {
+    return text.toLowerCase().trim().replace(/[!?.,]+$/g, '').replace(/\s+/g, ' ');
+  }
+
   isArchiveRequest(text) {
-    const normalized = text.toLowerCase().trim().replace(/[!?.,]+$/g, '').replace(/\s+/g, ' ');
-    return [
-      'export',
-      'archive',
-      'slack export',
-      'slack archive',
-      'export please',
-      'archive please',
-      'please export',
-      'please archive'
-    ].includes(normalized);
+    return ARCHIVE_COMMANDS.includes(this.normalizeCommand(text));
+  }
+
+  isHelpRequest(text) {
+    return HELP_COMMANDS.includes(this.normalizeCommand(text));
+  }
+
+  helpText() {
+    return HELP_TEXT;
+  }
+
+  errorText(text) {
+    return `${text}${HELP_HINT}`;
+  }
+
+  async handleHelpRequest(message, say) {
+    await say({
+      text: this.helpText(),
+      thread_ts: message.ts
+    });
   }
 
   async handleArchiveRequest(message, say) {
     if (!this.exportUrlService) {
       await say({
-        text: `Archive delivery is not configured yet. Please contact <@${this.adminUserId}>.`,
+        text: this.errorText(`Archive delivery is not configured yet. Please contact <@${this.adminUserId}>.`),
         thread_ts: message.ts
       });
       return;
@@ -49,7 +92,7 @@ class MessageHandler {
     } catch (error) {
       logger.error({ error }, 'Error generating archive download URL');
       await say({
-        text: `Sorry, I couldn't generate the archive download link. Please contact <@${this.adminUserId}>.`,
+        text: this.errorText(`Sorry, I couldn't generate the archive download link. Please contact <@${this.adminUserId}>.`),
         thread_ts: message.ts
       });
     }
@@ -62,7 +105,7 @@ class MessageHandler {
     if (!message || !message.text) {
       logger.warn({ message }, 'Received invalid message');
       await say({
-        text: 'Sorry, I couldn\'t process that message. Please send a GitHub username, "export", or "archive".',
+        text: this.errorText('Sorry, I couldn\'t process that message.'),
         thread_ts: message?.ts
       });
       return;
@@ -71,6 +114,11 @@ class MessageHandler {
     // Only respond to direct messages
     if (message.channel_type !== 'im') {
       logger.info('Ignoring message - not a direct message');
+      return;
+    }
+
+    if (this.isHelpRequest(message.text)) {
+      await this.handleHelpRequest(message, say);
       return;
     }
 
@@ -86,7 +134,7 @@ class MessageHandler {
 
     if (hasBeenProcessed) {
       await say({
-        text: 'You\'ve already used this service to join the GitHub organization.',
+        text: this.errorText('You\'ve already used this service to join the GitHub organization.'),
         thread_ts: message.ts
       });
       return;
@@ -103,7 +151,7 @@ class MessageHandler {
     // Check for empty username after trimming
     if (!potentialUsername) {
       await say({
-        text: 'Please provide a GitHub username.',
+        text: this.errorText('Please provide a GitHub username.'),
         thread_ts: message.ts
       });
       return;
@@ -154,14 +202,14 @@ class MessageHandler {
       } catch (error) {
         logger.error({ error }, 'Error sending confirmation message');
         await say({
-          text: 'Sorry, there was an error processing your request.',
+          text: this.errorText('Sorry, there was an error processing your request.'),
           thread_ts: message.ts
         });
       }
     } else {
       logger.info({ username: potentialUsername }, 'Invalid GitHub username');
       await say({
-        text: 'That doesn\'t appear to be a valid GitHub username. Please try again with a valid GitHub username.',
+        text: this.errorText('That doesn\'t appear to be a valid GitHub username. Please try again with a valid GitHub username.'),
         thread_ts: message.ts
       });
     }
@@ -184,13 +232,13 @@ class MessageHandler {
     } else if (result.error === 'ALREADY_IN_ORG') {
       await this.userTracker.markAsProcessed(slackUserId);
       await say({
-        text: 'Sorry - this user has already been added to the Github organization.',
+        text: this.errorText('Sorry - this user has already been added to the GitHub organization.'),
         thread_ts: body.message.thread_ts
       });
     } else {
       logger.error({ result }, 'Error sending GitHub invitation');
       await say({
-        text: `❌ Sorry, there was an error sending the GitHub invitation. Please contact <@${this.adminUserId}>.`,
+        text: this.errorText(`❌ Sorry, there was an error sending the GitHub invitation. Please contact <@${this.adminUserId}>.`),
         thread_ts: body.message.thread_ts
       });
     }
@@ -200,7 +248,7 @@ class MessageHandler {
     logger.info({ body }, 'User declined confirmation');
     await ack();
     await say({
-      text: 'Okay, please send me the correct GitHub username.',
+      text: 'Okay, please send me the correct GitHub username, or say "help" for a complete list of possible commands.',
       thread_ts: body.message.thread_ts
     });
   }
