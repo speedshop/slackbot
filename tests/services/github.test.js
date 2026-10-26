@@ -78,15 +78,14 @@ describe('GitHubService', () => {
       expect(result).toBeNull();
     });
 
-    test('handles network errors gracefully', async () => {
+    test('raises on network errors', async () => {
       const username = 'testuser';
 
       nock('https://api.github.com')
         .get(`/users/${username}`)
         .replyWithError('Network error');
 
-      const result = await github.checkUsername(username);
-      expect(result).toBeNull();
+      await expect(github.checkUsername(username)).rejects.toThrow('Network error');
     });
   });
 

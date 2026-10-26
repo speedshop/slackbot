@@ -23,32 +23,44 @@ class GitHubService {
     return pattern.test(username);
   }
 
+  async verifyToken() {
+    const response = await fetch('https://api.github.com/user', {
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (response.status !== 200) {
+      throw new Error(`GitHub token check failed with status ${response.status}`);
+    }
+  }
+
   async checkUsername(username) {
     if (!this.validateGitHubUsername(username)) {
       logger.info({ username }, 'Invalid GitHub username format');
       return null;
     }
 
-    try {
-      const response = await fetch(`https://api.github.com/users/${username}`, {
-        headers: {
-          'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-
-      if (response.status === 200) {
-        const userData = await response.json();
-        logger.info({ username, userId: userData.id }, 'GitHub user found');
-        return userData;
-      } else {
-        logger.info({ username, status: response.status }, 'GitHub user not found');
-        return null;
+    const response = await fetch(`https://api.github.com/users/${username}`, {
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json'
       }
-    } catch (error) {
-      logger.error({ error, username }, 'Error checking GitHub username');
+    });
+
+    if (response.status === 200) {
+      const userData = await response.json();
+      logger.info({ username, userId: userData.id }, 'GitHub user found');
+      return userData;
+    }
+
+    if (response.status === 404) {
+      logger.info({ username }, 'GitHub user not found');
       return null;
     }
+
+    throw new Error(`GitHub user lookup failed with status ${response.status}`);
   }
 
   async sendInvite(username) {
@@ -98,14 +110,16 @@ class GitHubService {
         }
       }
 
-      const success = response.status === 201;
-      logger.info({ username, success, status: response.status }, 'GitHub invite result');
-      return {
-        success,
-        error: success ? null : 'GITHUB_ERROR'
-      };
+      if (response.status !== 201) {
+        const body = await response.text();
+        logger.error({ username, status: response.status, body }, 'GitHub invite failed');
+        return { success: false, error: 'GITHUB_ERROR' };
+      }
+
+      logger.info({ username }, 'GitHub invite sent');
+      return { success: true, error: null };
     } catch (error) {
-      logger.error({ error, username }, 'Error sending GitHub invite');
+      logger.error({ err: error, username }, 'Error sending GitHub invite');
       return { success: false, error: 'GITHUB_ERROR' };
     }
   }

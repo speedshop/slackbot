@@ -43,6 +43,7 @@ async function initializeApp() {
       process.env.GITHUB_ORG,
       process.env.GITHUB_TEAM_ID
     );
+    await githubService.verifyToken();
 
     const exportUrlService = new ExportUrlService({
       accountId: process.env.R2_ACCOUNT_ID,
@@ -63,9 +64,9 @@ async function initializeApp() {
 
         await messageHandler.handleMessage(message, say);
       } catch (error) {
-        logger.error('Error processing message:', error);
+        logger.error({ err: error }, 'Error processing message');
         await say({
-          text: messageHandler.errorText('An error occurred while processing your request.'),
+          text: messageHandler.errorText(`Sorry, something went wrong on our end. Please contact <@${messageHandler.adminUserId}>.`),
           thread_ts: message.ts
         });
       }

@@ -1,4 +1,4 @@
-const { S3Client, HeadObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, HeadBucketCommand, HeadObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const logger = require('../config/logger');
 
 class UserTracker {
@@ -23,6 +23,7 @@ class UserTracker {
   }
 
   async initialize() {
+    await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
     return true;
   }
 

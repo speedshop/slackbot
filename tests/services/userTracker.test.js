@@ -6,6 +6,7 @@ jest.mock('@aws-sdk/client-s3', () => ({
   S3Client: jest.fn().mockImplementation(() => ({
     send: mockSend
   })),
+  HeadBucketCommand: jest.fn().mockImplementation((input) => ({ input })),
   HeadObjectCommand: jest.fn().mockImplementation((input) => ({ input })),
   PutObjectCommand: jest.fn().mockImplementation((input) => ({ input }))
 }));
@@ -25,9 +26,15 @@ describe('UserTracker', () => {
   });
 
   describe('initialize', () => {
-    test('returns true', async () => {
+    test('returns true when the marker bucket exists', async () => {
+      mockSend.mockResolvedValueOnce({});
+
       const result = await userTracker.initialize();
+
       expect(result).toBe(true);
+      expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
+        input: { Bucket: 'railsperf-processed-users' }
+      }));
     });
   });
 
