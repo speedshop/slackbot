@@ -80,19 +80,18 @@ Create a Slack app at <https://api.slack.com/apps> and configure:
 4. Interactivity: enabled (required for button actions)
 5. Install app to workspace and collect:
    - Bot token (`xoxb-...`)
-   - App token (`xapp-...`)
-   - Signing secret
+   - App token (`xapp-...`) with only the `connections:write` scope
    - Slack admin user ID (`U...`)
 
 ### GitHub setup
 
-Create a personal access token with:
+Create a GitHub App owned by the org with the organization permission **Members: Read and write** and nothing else, then install it on the org. The bot signs a JWT with the app's private key and uses 1-hour installation tokens.
 
-- `admin:org`
-- `read:user`
+Gather:
 
-Also gather:
-
+- App ID
+- Installation ID
+- Private key (PEM)
 - GitHub org name
 - Team ID (numeric)
 
@@ -106,11 +105,23 @@ Use one credential pair for both operations:
 Configure:
 
 - Account ID
-- Access key ID + secret access key
+- Access key ID + secret access key from an R2 token with **Object Read & Write** on only the export and marker buckets, with an expiry date
 - Export bucket name (example: `railsperf-exports`) and object key
 - Marker bucket name (example: `railsperf-processed-users`)
 
 For backup safety, enable versioning on the marker bucket.
+
+### Secrets at runtime
+
+In production the container runs `op run --env-file=op.env`, which reads every secret from the 1Password vault `slackbot` at boot. The host only stores `OP_SERVICE_ACCOUNT_TOKEN`, for a read-only service account limited to that vault. Non-secret settings (`SLACK_ADMIN_USER_ID`, `GITHUB_ORG`, `GITHUB_TEAM_ID`, `R2_*` bucket names, `R2_ACCOUNT_ID`) are plain environment variables.
+
+The vault holds these items and fields (see `op.env`):
+
+| Item | Fields |
+| --- | --- |
+| `slack` | `bot_token`, `app_token` |
+| `github-app` | `app_id`, `installation_id`, `private_key` |
+| `r2` | `access_key_id`, `secret_access_key` |
 
 ### Environment variables
 
@@ -124,10 +135,11 @@ Set required values:
 
 ```env
 SLACK_BOT_TOKEN=xoxb-your-token
-SLACK_SIGNING_SECRET=your-signing-secret
 SLACK_APP_TOKEN=xapp-your-token
 SLACK_ADMIN_USER_ID=U0123456789
-GITHUB_TOKEN=your-github-token
+GITHUB_APP_ID=123456
+GITHUB_APP_INSTALLATION_ID=12345678
+GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
 GITHUB_ORG=your-org
 GITHUB_TEAM_ID=123456
 R2_ACCOUNT_ID=your-cloudflare-account-id

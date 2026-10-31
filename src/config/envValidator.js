@@ -2,9 +2,10 @@ class EnvValidator {
   static validate() {
     const requiredVars = [
       'SLACK_BOT_TOKEN',
-      'SLACK_SIGNING_SECRET',
       'SLACK_APP_TOKEN',
-      'GITHUB_TOKEN',
+      'GITHUB_APP_ID',
+      'GITHUB_APP_INSTALLATION_ID',
+      'GITHUB_APP_PRIVATE_KEY',
       'GITHUB_ORG',
       'GITHUB_TEAM_ID',
       'SLACK_ADMIN_USER_ID',
@@ -31,8 +32,8 @@ class EnvValidator {
       throw new Error('Invalid SLACK_APP_TOKEN format');
     }
 
-    if (process.env.GITHUB_TOKEN.length < 30) {
-      throw new Error('GITHUB_TOKEN appears to be invalid');
+    if (!process.env.GITHUB_APP_PRIVATE_KEY.includes('PRIVATE KEY')) {
+      throw new Error('GITHUB_APP_PRIVATE_KEY must be a PEM private key');
     }
 
     // Validate GITHUB_TEAM_ID is a number

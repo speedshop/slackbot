@@ -1,5 +1,7 @@
 FROM node:20-slim
 
+COPY --from=1password/op:2.41.1 /usr/local/bin/op /usr/local/bin/op
+
 WORKDIR /app
 
 # Copy package.json and package-lock.json
@@ -18,4 +20,4 @@ VOLUME /app/data
 ENV NODE_ENV=production
 
 # Run the application
-CMD ["npm", "start"]
+CMD ["op", "run", "--env-file=op.env", "--no-masking", "--", "npm", "start"]
