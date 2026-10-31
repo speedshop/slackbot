@@ -10,13 +10,15 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+    command: npm start
     environment:
       - NODE_ENV=production
       # You can override any environment variables here
       # - SLACK_BOT_TOKEN=
-      # - SLACK_SIGNING_SECRET=
       # - SLACK_APP_TOKEN=
       # - SLACK_ADMIN_USER_ID=
-      # - GITHUB_TOKEN=
+      # - GITHUB_APP_ID=
+      # - GITHUB_APP_INSTALLATION_ID=
+      # - GITHUB_APP_PRIVATE_KEY=
       # - GITHUB_ORG=
       # - GITHUB_TEAM_ID=

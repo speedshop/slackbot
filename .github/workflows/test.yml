@@ -25,11 +25,4 @@ jobs:
     - name: Run tests
       run: npm run test
       env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
-        SLACK_APP_TOKEN: ${{ secrets.SLACK_APP_TOKEN }}
-        SLACK_ADMIN_USER_ID: ${{ secrets.SLACK_ADMIN_USER_ID }}
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        GITHUB_ORG: ${{ secrets.GITHUB_ORG }}
-        GITHUB_TEAM_ID: ${{ secrets.GITHUB_TEAM_ID }}
         NODE_ENV: test

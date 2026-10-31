@@ -6,7 +6,7 @@ describe('GitHubService', () => {
 
   beforeEach(() => {
     nock.cleanAll();
-    github = new GitHubService('test-token', 'test-org', '12345');
+    github = new GitHubService(async () => 'test-token', 'test-org', '12345');
   });
 
   afterEach(() => {

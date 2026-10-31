@@ -99,11 +99,11 @@ class MessageHandler {
   }
 
   async handleMessage(message, say) {
-    logger.info({ message }, 'Received message');
+    logger.info({ userId: message?.user, channelType: message?.channel_type, ts: message?.ts }, 'Received message');
 
     // Validate message object and its properties
     if (!message || !message.text) {
-      logger.warn({ message }, 'Received invalid message');
+      logger.warn({ userId: message?.user, ts: message?.ts }, 'Received invalid message');
       await say({
         text: this.errorText('Sorry, I couldn\'t process that message.'),
         thread_ts: message?.ts
@@ -216,7 +216,7 @@ class MessageHandler {
   }
 
   async handleConfirmYes({ body, ack, say }) {
-    logger.info({ body }, 'Received confirmation');
+    logger.info({ userId: body.user.id }, 'Received confirmation');
     await ack();
     const githubUsername = body.actions[0].value;
     const slackUserId = body.user.id;
@@ -245,7 +245,7 @@ class MessageHandler {
   }
 
   async handleConfirmNo({ body, ack, say }) {
-    logger.info({ body }, 'User declined confirmation');
+    logger.info({ userId: body.user?.id }, 'User declined confirmation');
     await ack();
     await say({
       text: 'Okay, please send me the correct GitHub username, or say "help" for a complete list of possible commands.',

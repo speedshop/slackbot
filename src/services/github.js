@@ -2,8 +2,8 @@ const fetch = require('node-fetch');
 const logger = require('../config/logger');
 
 class GitHubService {
-  constructor(token, orgName, teamId) {
-    this.token = token;
+  constructor(getToken, orgName, teamId) {
+    this.getToken = getToken;
     this.orgName = orgName;
     this.teamId = parseInt(teamId, 10);
   }
@@ -24,16 +24,7 @@ class GitHubService {
   }
 
   async verifyToken() {
-    const response = await fetch('https://api.github.com/user', {
-      headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
-
-    if (response.status !== 200) {
-      throw new Error(`GitHub token check failed with status ${response.status}`);
-    }
+    await this.getToken();
   }
 
   async checkUsername(username) {
@@ -44,7 +35,7 @@ class GitHubService {
 
     const response = await fetch(`https://api.github.com/users/${username}`, {
       headers: {
-        'Authorization': `token ${this.token}`,
+        'Authorization': `token ${await this.getToken()}`,
         'Accept': 'application/vnd.github.v3+json'
       }
     });
@@ -73,7 +64,7 @@ class GitHubService {
       // First get the user's GitHub ID
       const userResponse = await fetch(`https://api.github.com/users/${username}`, {
         headers: {
-          'Authorization': `token ${this.token}`,
+          'Authorization': `token ${await this.getToken()}`,
           'Accept': 'application/vnd.github.v3+json'
         }
       });
@@ -92,7 +83,7 @@ class GitHubService {
         {
           method: 'POST',
           headers: {
-            'Authorization': `token ${this.token}`,
+            'Authorization': `token ${await this.getToken()}`,
             'Accept': 'application/vnd.github.v3+json'
           },
           body: JSON.stringify({

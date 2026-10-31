@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { App } = require('@slack/bolt');
 const GitHubService = require('./services/github');
+const GitHubAppAuth = require('./services/githubAppAuth');
 const UserTracker = require('./services/userTracker');
 const ExportUrlService = require('./services/exportUrl');
 const MessageHandler = require('./handlers/messageHandler');
@@ -14,7 +15,6 @@ async function initializeApp() {
 
     const app = new App({
       token: process.env.SLACK_BOT_TOKEN,
-      signingSecret: process.env.SLACK_SIGNING_SECRET,
       socketMode: true,
       appToken: process.env.SLACK_APP_TOKEN,
       // Configure Slack's logger to use our pino logger
@@ -38,8 +38,14 @@ async function initializeApp() {
     });
     await userTracker.initialize();
 
+    const githubAppAuth = new GitHubAppAuth({
+      appId: process.env.GITHUB_APP_ID,
+      installationId: process.env.GITHUB_APP_INSTALLATION_ID,
+      privateKey: process.env.GITHUB_APP_PRIVATE_KEY
+    });
+
     const githubService = new GitHubService(
-      process.env.GITHUB_TOKEN,
+      () => githubAppAuth.getToken(),
       process.env.GITHUB_ORG,
       process.env.GITHUB_TEAM_ID
     );
@@ -59,9 +65,6 @@ async function initializeApp() {
 
     app.message(async ({ message, say }) => {
       try {
-        // Log every incoming message at debug level
-        logger.debug({ message }, 'Incoming Slack message received');
-
         await messageHandler.handleMessage(message, say);
       } catch (error) {
         logger.error({ err: error }, 'Error processing message');
